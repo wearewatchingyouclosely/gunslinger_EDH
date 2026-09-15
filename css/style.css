@@ -71,6 +71,37 @@ header.top .sub{font-size:0.85rem; letter-spacing:2px; text-transform:uppercase;
 .rules-body td:first-child{font-weight:700; white-space:nowrap;}
 .rules-body .current-row{background:var(--paper-alt);}
 
+.carousel{position:relative; margin:14px 0; padding:0 40px;}
+.carousel-viewport{overflow:hidden;}
+.carousel-track{display:flex; gap:14px; transition:transform 0.32s cubic-bezier(.22,.68,0,1);}
+.role-card{
+  flex:0 0 78%; border:2px solid var(--rule); border-radius:6px; padding:14px 16px; text-align:center;
+  background:var(--paper);
+}
+.role-card.law{border-color:var(--law);}
+.role-card.outlaw{border-color:var(--outlaw);}
+.role-card.wild{border-color:var(--gold);}
+.role-card.dim{opacity:0.5;}
+.role-card-name{font-family:'Rye'; font-size:1.5rem; margin-bottom:4px; text-wrap:balance;}
+.role-card-cond{font-weight:600; margin-top:8px; font-size:0.92rem;}
+.role-card-special{font-style:italic; color:var(--ink-soft); font-size:0.82rem; margin-top:8px;}
+.role-card-avail{font-size:0.74rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); margin-top:10px;}
+.carousel-nav{
+  position:absolute; top:50%; transform:translateY(-50%); z-index:2;
+  width:34px; height:34px; border-radius:50%; border:1px solid var(--rule); background:var(--card-bg);
+  color:var(--ink); cursor:pointer; font-size:1.3rem; line-height:1; box-shadow:var(--shadow);
+}
+.carousel-nav:hover{background:var(--paper-alt);}
+.carousel-nav.edge{opacity:0.35; cursor:default;}
+.carousel-nav.prev{left:0;}
+.carousel-nav.next{right:0;}
+.carousel-dots{display:flex; justify-content:center; gap:6px; margin-top:10px;}
+.carousel-dot{
+  width:9px; height:9px; border-radius:50%; border:1px solid var(--rule); background:var(--paper);
+  padding:0; cursor:pointer;
+}
+.carousel-dot.active{background:var(--gold); border-color:var(--gold);}
+
 /* ---- Setup / deal screen ---- */
 .setup{
   background:var(--card-bg); border:1px solid var(--rule); border-radius:6px;

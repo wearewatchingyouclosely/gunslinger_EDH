@@ -109,13 +109,92 @@
     rulesToggle.textContent = (open ? "▸" : "▾") + " How roles & win conditions work";
   });
 
+  function minPlayersFor(key) {
+    if (key === "WARRIOR") return 6;
+    if (key === "CIVILIAN") return 7;
+    return 5;
+  }
+
+  function roleCardHtml(key, count) {
+    var def = ROLES[key];
+    var min = minPlayersFor(key);
+    var included = count >= min;
+    return '<div class="role-card ' + def.tag + (included ? "" : " dim") + '">' +
+      '<div class="role-card-name">' + def.label + "</div>" +
+      '<div class="' + (def.public ? "public-tag" : "private-tag") + '">' + (def.public ? "Public role" : "Private role") + "</div>" +
+      '<div class="role-card-cond">' + def.cond + "</div>" +
+      (def.special ? '<div class="role-card-special">' + def.special + "</div>" : "") +
+      '<div class="role-card-avail">' + (min === 5 ? "In every game" : "Added at " + min + "+ players") +
+        (included ? "" : " — not dealt in this " + count + "-player game") + "</div>" +
+    "</div>";
+  }
+
+  var carouselIndex = 0;
+
+  function updateCarouselTransform() {
+    var viewport = document.getElementById("carouselViewport");
+    var track = document.getElementById("carouselTrack");
+    if (!viewport || !track) return;
+    var cards = track.querySelectorAll(".role-card");
+    var card = cards[carouselIndex];
+    if (!card) return;
+    var offset = card.offsetLeft - (viewport.clientWidth - card.offsetWidth) / 2;
+    var maxOffset = Math.max(0, track.scrollWidth - viewport.clientWidth);
+    offset = Math.max(0, Math.min(offset, maxOffset));
+    track.style.transform = "translateX(-" + offset + "px)";
+
+    var wrap = document.getElementById("roleCarousel");
+    wrap.querySelectorAll(".carousel-dot").forEach(function (dot, i) {
+      dot.classList.toggle("active", i === carouselIndex);
+    });
+    wrap.querySelectorAll(".carousel-nav").forEach(function (btn) {
+      btn.classList.toggle("edge", (btn.dataset.dir === "-1" && carouselIndex === 0) || (btn.dataset.dir === "1" && carouselIndex === ROLE_ORDER.length - 1));
+    });
+  }
+
+  function goToCarouselIndex(i) {
+    carouselIndex = (i + ROLE_ORDER.length) % ROLE_ORDER.length;
+    updateCarouselTransform();
+  }
+
   function setRulesFor(count) {
+    count = count || 5;
+    carouselIndex = 0;
     rulesBody.innerHTML =
-      "<p>The Sheriff is always in the deck and is public from the start. Every other role is dealt secretly and stays hidden until the situation on its card says to flip it.</p>" +
-      "<table>" + rosterFor(count || 5) + "</table>" +
+      "<p>The Sheriff is always in the deck and is public from the start. Every other role is dealt secretly and stays hidden until the situation on its card says to flip it. Click through the roles below.</p>" +
+      '<div class="carousel" id="roleCarousel">' +
+        '<button class="carousel-nav prev" data-dir="-1" type="button" aria-label="Previous role">‹</button>' +
+        '<div class="carousel-viewport" id="carouselViewport">' +
+          '<div class="carousel-track" id="carouselTrack">' +
+            ROLE_ORDER.map(function (k) { return roleCardHtml(k, count); }).join("") +
+          "</div>" +
+        "</div>" +
+        '<button class="carousel-nav next" data-dir="1" type="button" aria-label="Next role">›</button>' +
+        '<div class="carousel-dots">' +
+          ROLE_ORDER.map(function (k, i) {
+            return '<button class="carousel-dot" data-i="' + i + '" type="button" aria-label="' + ROLES[k].label + '"></button>';
+          }).join("") +
+        "</div>" +
+      "</div>" +
+      "<table>" + rosterFor(count) + "</table>" +
       '<p style="margin-top:10px;">If a win condition names a role that isn’t in play at your table size, treat that role as already dead for the purpose of checking the condition.</p>';
+
+    updateCarouselTransform();
+
+    var wrap = document.getElementById("roleCarousel");
+    wrap.querySelectorAll(".carousel-nav").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        goToCarouselIndex(carouselIndex + parseInt(btn.dataset.dir, 10));
+      });
+    });
+    wrap.querySelectorAll(".carousel-dot").forEach(function (dot) {
+      dot.addEventListener("click", function () {
+        goToCarouselIndex(parseInt(dot.dataset.i, 10));
+      });
+    });
   }
   setRulesFor(5);
+  window.addEventListener("resize", updateCarouselTransform);
 
   // ---- Deal screen (host) --------------------------------------------------
 
