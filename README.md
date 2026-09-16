@@ -28,10 +28,9 @@ DM), not in the pod's shared channel.
 
 There's no shared board — this is intentionally a static, no-backend build.
 Revealing a role means what it always meant at a physical table: flip your
-card (hold your screen up to the camera / say it out loud). Life totals and
-"eliminated" status aren't synced between players; each player's own reveal
-page has a personal life counter (defaults to 60 for the Sheriff, 40
-otherwise) saved only in their own browser, as a convenience.
+card (hold your screen up to the camera / say it out loud). Life totals
+aren't tracked by the app at all — use whatever life counter your pod
+already uses for Commander.
 
 ## How it works
 

@@ -105,14 +105,6 @@
     }
   }
 
-  function simpleHash(str) {
-    var h = 0;
-    for (var i = 0; i < str.length; i++) {
-      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-    }
-    return "wg_" + Math.abs(h);
-  }
-
   var ART_KEY = "wawyc_art_urls";
   function getSavedArt() {
     try { return JSON.parse(localStorage.getItem(ART_KEY) || "{}"); } catch (e) { return {}; }
@@ -477,11 +469,6 @@
     var art = artMap[payload.r];
     setRulesFor(payload.pc, artMap);
 
-    var storeKey = simpleHash(location.hash) + "_life";
-    var savedLife = null;
-    try { savedLife = parseInt(localStorage.getItem(storeKey), 10); } catch (e) {}
-    var life = isNaN(savedLife) ? def.startLife : savedLife;
-
     var html = "";
     html += '<div class="reveal-card' + (art ? " has-art" : "") + '">';
     html += '<div class="player-name">' + escapeHtml(payload.n) + "</div>";
@@ -508,23 +495,9 @@
         "</div></div>";
     }
 
-    html += '<div class="panel"><h3>Your life total</h3>' +
-      '<div class="life-row">' +
-        '<button class="life-btn" id="lifeMinus" type="button">−</button>' +
-        '<span class="life-val" id="lifeVal">' + life + "</span>" +
-        '<button class="life-btn" id="lifePlus" type="button">+</button>' +
-      "</div>" +
-      '<div class="life-hint">Tracked only on this device — nothing here is shared with the table.</div>' +
-    "</div>";
-
     html += '<div class="new-game-row"><a class="ghost-btn" href="' + location.origin + location.pathname + '">Deal a new game</a></div>';
 
     app.innerHTML = html;
-
-    var lifeVal = document.getElementById("lifeVal");
-    function saveLife() { try { localStorage.setItem(storeKey, String(life)); } catch (e) {} }
-    document.getElementById("lifeMinus").addEventListener("click", function () { life--; lifeVal.textContent = life; saveLife(); });
-    document.getElementById("lifePlus").addEventListener("click", function () { life++; lifeVal.textContent = life; saveLife(); });
   }
 
   // ---- Boot -----------------------------------------------------------------
