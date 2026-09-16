@@ -35,6 +35,23 @@
 
   var ROLE_ORDER = ["SHERIFF", "DEPUTY", "OUTLAW", "GUNSLINGER", "WARRIOR", "CIVILIAN"];
 
+  // Built-in default card art. Drop your own image files in the cards/
+  // folder using these filenames and every game deals with them
+  // automatically — no need to paste a URL each time. A per-field URL
+  // typed into "Card art" on the deal screen overrides its default;
+  // a missing/unreachable file just falls back to the plain text card.
+  // OUTLAW is an array: there are two Outlaw seats, and each gets its own
+  // variant image (first Outlaw dealt gets [0], second gets [1]); typing
+  // a manual override in the form replaces both with a single image.
+  var DEFAULT_ART = {
+    SHERIFF: "cards/sheriff.png",
+    DEPUTY: "cards/deputy.png",
+    OUTLAW: ["cards/outlaw-1.png", "cards/outlaw-2.png"],
+    GUNSLINGER: "cards/gunslinger.png",
+    WARRIOR: "cards/warrior.png",
+    CIVILIAN: "cards/civilian.png"
+  };
+
   function roleSetFor(count) {
     var set = ["SHERIFF", "DEPUTY", "OUTLAW", "OUTLAW", "GUNSLINGER"];
     if (count >= 6) set.push("WARRIOR");
@@ -96,17 +113,40 @@
     return "wg_" + Math.abs(h);
   }
 
+  var ART_KEY = "wawyc_art_urls";
+  function getSavedArt() {
+    try { return JSON.parse(localStorage.getItem(ART_KEY) || "{}"); } catch (e) { return {}; }
+  }
+  function saveArt(map) {
+    try { localStorage.setItem(ART_KEY, JSON.stringify(map)); } catch (e) {}
+  }
+  function effectiveArt() {
+    var out = {};
+    var saved = getSavedArt();
+    ROLE_ORDER.forEach(function (k) {
+      if (saved[k]) out[k] = saved[k];
+      else if (DEFAULT_ART[k]) out[k] = DEFAULT_ART[k];
+    });
+    return out;
+  }
+
   // ---- DOM shells ----------------------------------------------------------
 
   var app = document.getElementById("app");
   var rulesToggle = document.getElementById("rulesToggle");
+  var rulesToggleChevron = rulesToggle.querySelector(".chevron");
   var rulesBody = document.getElementById("rulesBody");
 
   rulesToggle.addEventListener("click", function () {
     var open = !rulesBody.hidden;
     rulesBody.hidden = open;
     rulesToggle.setAttribute("aria-expanded", String(!open));
-    rulesToggle.textContent = (open ? "▸" : "▾") + " How roles & win conditions work";
+    rulesToggleChevron.textContent = open ? "▸" : "▾";
+  });
+
+  document.getElementById("topNewGameBtn").addEventListener("click", function () {
+    location.hash = "";
+    renderDealScreen();
   });
 
   function minPlayersFor(key) {
@@ -115,18 +155,34 @@
     return 5;
   }
 
-  function roleCardHtml(key, count) {
+  function roleCardHtml(key, count, artMap) {
     var def = ROLES[key];
     var min = minPlayersFor(key);
     var included = count >= min;
-    return '<div class="role-card ' + def.tag + (included ? "" : " dim") + '">' +
-      '<div class="role-card-name">' + def.label + "</div>" +
-      '<div class="' + (def.public ? "public-tag" : "private-tag") + '">' + (def.public ? "Public role" : "Private role") + "</div>" +
-      '<div class="role-card-cond">' + def.cond + "</div>" +
-      (def.special ? '<div class="role-card-special">' + def.special + "</div>" : "") +
-      '<div class="role-card-avail">' + (min === 5 ? "In every game" : "Added at " + min + "+ players") +
-        (included ? "" : " — not dealt in this " + count + "-player game") + "</div>" +
-    "</div>";
+    var art = artMap && artMap[key];
+    if (Array.isArray(art)) art = art[0];
+    var classes = "role-card " + def.tag + (included ? "" : " dim") + (art ? " has-art" : "");
+
+    var imgHtml = art
+      ? '<img class="role-card-img" src="' + escapeHtml(art) + '" alt="' + escapeHtml(def.label) + ' card"' +
+        ' loading="lazy" onerror="this.closest(\'.role-card\').classList.add(\'img-broken\')">'
+      : "";
+
+    var fallbackHtml =
+      '<div class="role-card-fallback">' +
+        '<div class="role-card-name">' + def.label + "</div>" +
+        '<div class="' + (def.public ? "public-tag" : "private-tag") + '">' + (def.public ? "Public role" : "Private role") + "</div>" +
+        '<div class="role-card-cond">' + def.cond + "</div>" +
+        (def.special ? '<div class="role-card-special">' + def.special + "</div>" : "") +
+        '<div class="role-card-avail">' + (min === 5 ? "In every game" : "Added at " + min + "+ players") +
+          (included ? "" : " — not dealt in this " + count + "-player game") + "</div>" +
+      "</div>";
+
+    var overlayHtml = (art && !included)
+      ? '<div class="role-card-avail overlay">Not dealt in this ' + count + "-player game</div>"
+      : "";
+
+    return '<div class="' + classes + '">' + imgHtml + fallbackHtml + overlayHtml + "</div>";
   }
 
   var carouselIndex = 0;
@@ -157,8 +213,9 @@
     updateCarouselTransform();
   }
 
-  function setRulesFor(count) {
+  function setRulesFor(count, artMap) {
     count = count || 5;
+    artMap = artMap || {};
     carouselIndex = 0;
     rulesBody.innerHTML =
       "<p>The Sheriff is always in the deck and is public from the start. Every other role is dealt secretly and stays hidden until the situation on its card says to flip it. Click through the roles below.</p>" +
@@ -166,7 +223,7 @@
         '<button class="carousel-nav prev" data-dir="-1" type="button" aria-label="Previous role">‹</button>' +
         '<div class="carousel-viewport" id="carouselViewport">' +
           '<div class="carousel-track" id="carouselTrack">' +
-            ROLE_ORDER.map(function (k) { return roleCardHtml(k, count); }).join("") +
+            ROLE_ORDER.map(function (k) { return roleCardHtml(k, count, artMap); }).join("") +
           "</div>" +
         "</div>" +
         '<button class="carousel-nav next" data-dir="1" type="button" aria-label="Next role">›</button>' +
@@ -193,7 +250,7 @@
       });
     });
   }
-  setRulesFor(5);
+  setRulesFor(5, effectiveArt());
   window.addEventListener("resize", updateCarouselTransform);
 
   // ---- Deal screen (host) --------------------------------------------------
@@ -216,6 +273,15 @@
           '<div class="name-inputs" id="nameInputs"></div>' +
         "</div>" +
         '<button class="primary-btn" id="dealBtn" type="button">Shuffle &amp; Deal</button>' +
+        '<div class="field" style="margin-top:20px;"><label>Card art (optional) — pre-filled from cards/&lt;role&gt;.png if present, editable per game; leave blank to use the plain card. Remembered on this device for next time.</label>' +
+          '<div class="art-inputs" id="artInputs">' +
+            ROLE_ORDER.map(function (k) {
+              return '<div class="art-row"><span class="art-role-label">' + ROLES[k].label + '</span>' +
+                '<input type="url" class="art-url-input" data-role="' + k + '" placeholder="https://...">' +
+              "</div>";
+            }).join("") +
+          "</div>" +
+        "</div>" +
       "</div>";
 
     function renderNameInputs(n) {
@@ -229,7 +295,43 @@
       box.innerHTML = html;
     }
     renderNameInputs(selectedCount);
-    setRulesFor(selectedCount);
+
+    var startArt = effectiveArt();
+    Array.prototype.forEach.call(document.querySelectorAll("#artInputs .art-url-input"), function (input) {
+      var v = startArt[input.dataset.role];
+      input.value = (Array.isArray(v) ? v[0] : v) || "";
+    });
+
+    // A field left untouched keeps following its (possibly multi-variant)
+    // default even as DEFAULT_ART changes; typing in it locks in a single
+    // manual override for every seat with that role.
+    function readArtMap() {
+      var map = {};
+      var eff = effectiveArt();
+      Array.prototype.forEach.call(document.querySelectorAll("#artInputs .art-url-input"), function (input) {
+        var role = input.dataset.role;
+        if (input.dataset.touched !== "true" && Array.isArray(eff[role])) {
+          map[role] = eff[role];
+          return;
+        }
+        var v = input.value.trim();
+        if (v) map[role] = v;
+      });
+      return map;
+    }
+
+    setRulesFor(selectedCount, readArtMap());
+
+    var artDebounce = null;
+    document.getElementById("artInputs").addEventListener("input", function (e) {
+      e.target.dataset.touched = "true";
+      clearTimeout(artDebounce);
+      artDebounce = setTimeout(function () {
+        var map = readArtMap();
+        saveArt(map);
+        setRulesFor(selectedCount, map);
+      }, 500);
+    });
 
     document.getElementById("countRow").addEventListener("click", function (e) {
       var btn = e.target.closest(".count-btn");
@@ -239,7 +341,7 @@
         b.classList.toggle("active", b === btn);
       });
       renderNameInputs(selectedCount);
-      setRulesFor(selectedCount);
+      setRulesFor(selectedCount, readArtMap());
     });
 
     document.getElementById("dealBtn").addEventListener("click", function () {
@@ -249,23 +351,47 @@
         var v = inputs[i] && inputs[i].value.trim();
         names.push(v || ("Seat " + (i + 1)));
       }
+      var artMap = readArtMap();
+      saveArt(artMap);
+
       var roles = shuffle(roleSetFor(selectedCount));
       var sheriffIdx = roles.indexOf("SHERIFF");
       var sheriffName = names[sheriffIdx];
 
+      // For a role whose art is an array (multiple card variants, e.g. the
+      // two Outlaws), give each seat holding that role its own variant in
+      // the order dealt, cycling if there are ever more seats than variants.
+      var roleOccurrence = {};
       var seats = names.map(function (name, i) {
-        return { name: name, role: roles[i] };
+        var role = roles[i];
+        var occurrence = roleOccurrence[role] || 0;
+        roleOccurrence[role] = occurrence + 1;
+        var roleArt = artMap[role];
+        var ownArt = Array.isArray(roleArt) ? roleArt[occurrence % roleArt.length] : roleArt;
+        return { name: name, role: role, ownArt: ownArt };
+      });
+
+      // Every seat's link also carries a representative image per role (for
+      // its own rules-reference carousel) — first variant when that role's
+      // art is an array.
+      var representativeArt = {};
+      ROLE_ORDER.forEach(function (k) {
+        var v = artMap[k];
+        representativeArt[k] = Array.isArray(v) ? v[0] : v;
       });
 
       var base = location.origin + location.pathname;
       var links = seats.map(function (seat) {
+        var seatArt = Object.assign({}, representativeArt);
+        if (seat.ownArt) seatArt[seat.role] = seat.ownArt;
         var payload = {
           v: 1,
           pc: selectedCount,
           n: seat.name,
           r: seat.role,
           sh: sheriffName,
-          ro: names
+          ro: names,
+          art: seatArt
         };
         return { name: seat.name, role: seat.role, url: base + "#s=" + encodePayload(payload) };
       });
@@ -347,7 +473,9 @@
     var def = ROLES[payload.r];
     if (!def) { renderDealScreen(); return; }
 
-    setRulesFor(payload.pc);
+    var artMap = payload.art || {};
+    var art = artMap[payload.r];
+    setRulesFor(payload.pc, artMap);
 
     var storeKey = simpleHash(location.hash) + "_life";
     var savedLife = null;
@@ -355,13 +483,19 @@
     var life = isNaN(savedLife) ? def.startLife : savedLife;
 
     var html = "";
-    html += '<div class="reveal-card">';
+    html += '<div class="reveal-card' + (art ? " has-art" : "") + '">';
     html += '<div class="player-name">' + escapeHtml(payload.n) + "</div>";
+    if (art) {
+      html += '<img class="reveal-card-img" src="' + escapeHtml(art) + '" alt="' + escapeHtml(def.label) + ' card"' +
+        ' onerror="this.closest(\'.reveal-card\').classList.add(\'img-broken\')">';
+    }
+    html += '<div class="reveal-card-fallback">';
     html += '<div class="role-name ' + def.tag + '">' + def.label + "</div>";
     html += '<div class="' + (def.public ? "public-tag" : "private-tag") + '">' + (def.public ? "Public role — reveal now" : "Private role — keep hidden") + "</div>";
     html += '<div class="win-cond">' + def.cond + "</div>";
     if (def.special) html += '<div class="special">' + def.special + "</div>";
-    html += "</div>";
+    html += "</div>"; // reveal-card-fallback
+    html += "</div>"; // reveal-card
 
     html += '<div class="panel"><h3>The Sheriff</h3><div class="sheriff-line"><span class="badge">★</span><span>' +
       escapeHtml(payload.sh) + " starts at 60 life and is known to everyone from the start.</span></div></div>";

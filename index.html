@@ -13,11 +13,14 @@
 <body>
   <div class="wrap">
     <header class="top">
+      <button class="top-newgame-btn" id="topNewGameBtn" type="button">↻ Deal a new game</button>
       <h1>Gunslinger EDH</h1>
       <div class="sub">Hidden roles for a virtual Commander pod</div>
     </header>
 
-    <button class="rules-toggle" id="rulesToggle" type="button" aria-expanded="false">▸ How roles &amp; win conditions work</button>
+    <button class="rules-toggle" id="rulesToggle" type="button" aria-expanded="false">
+      <span class="chevron">▸</span> <span class="rules-toggle-label">How roles &amp; win conditions work</span>
+    </button>
     <div class="rules-body" id="rulesBody" hidden></div>
 
     <main id="app"></main>
