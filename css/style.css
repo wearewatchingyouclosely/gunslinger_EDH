@@ -111,18 +111,9 @@ header.top .sub{font-size:0.85rem; letter-spacing:2px; text-transform:uppercase;
 .role-card-cond{font-weight:600; margin-top:8px; font-size:0.92rem;}
 .role-card-special{font-style:italic; color:var(--ink-soft); font-size:0.82rem; margin-top:8px;}
 .role-card-avail{font-size:0.74rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); margin-top:10px;}
-.role-card-avail.overlay{
-  display:none; position:absolute; left:0; right:0; bottom:0; margin:0;
-  background:rgba(0,0,0,0.65); color:#fff; padding:6px 8px;
-}
-.role-card-img{max-width:100%; max-height:320px; width:auto; height:auto; display:block; margin:0 auto; border-radius:4px;}
+.role-card-img{max-width:100%; max-height:320px; width:auto; height:auto; display:block; margin:0 auto 10px; border-radius:4px;}
 .role-card.has-art{padding:16px;}
-.role-card.has-art .role-card-fallback{display:none;}
-.role-card.has-art .role-card-avail.overlay{display:block;}
-.role-card.has-art.img-broken{padding:14px 16px;}
 .role-card.has-art.img-broken .role-card-img{display:none;}
-.role-card.has-art.img-broken .role-card-fallback{display:block;}
-.role-card.has-art.img-broken .role-card-avail.overlay{display:none;}
 .carousel-nav{
   position:absolute; top:50%; transform:translateY(-50%); z-index:2;
   width:34px; height:34px; border-radius:50%; border:1px solid var(--rule); background:var(--card-bg);

@@ -162,7 +162,7 @@
 
     var fallbackHtml =
       '<div class="role-card-fallback">' +
-        '<div class="role-card-name">' + def.label + "</div>" +
+        (art ? "" : '<div class="role-card-name">' + def.label + "</div>") +
         '<div class="' + (def.public ? "public-tag" : "private-tag") + '">' + (def.public ? "Public role" : "Private role") + "</div>" +
         '<div class="role-card-cond">' + def.cond + "</div>" +
         (def.special ? '<div class="role-card-special">' + def.special + "</div>" : "") +
@@ -170,11 +170,7 @@
           (included ? "" : " — not dealt in this " + count + "-player game") + "</div>" +
       "</div>";
 
-    var overlayHtml = (art && !included)
-      ? '<div class="role-card-avail overlay">Not dealt in this ' + count + "-player game</div>"
-      : "";
-
-    return '<div class="' + classes + '">' + imgHtml + fallbackHtml + overlayHtml + "</div>";
+    return '<div class="' + classes + '">' + imgHtml + fallbackHtml + "</div>";
   }
 
   var carouselIndex = 0;
